@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BirdMatch Lima — Versión conectada (Capítulo 10)</title>
+<title>BirdMatch Lima</title>
 <style>
   :root{
     --dark-green:#1B4332; --green:#2D6A4F; --light-green:#40916C;
@@ -59,26 +59,17 @@
 <body>
 
 <div class="topbar">
-  <h1>BirdMatch Lima — Versión conectada</h1>
-  <p>Capítulo 10 · Firestore real, sin Authentication todavía</p>
+  <h1>🐦 BirdMatch Lima</h1>
+  <p>Encuentra a tu complemento en la observación de aves</p>
 </div>
 
 <div class="container">
 
-  <!-- PASO 1: CONFIG -->
-  <div class="card" id="pasoConfig">
-    <h2>Paso 1 — Conectar a tu proyecto</h2>
-    <p class="step-desc">Pega tu <code>firebaseConfig</code> (formato JSON, igual que en el Capítulo 9).</p>
-    <textarea id="configInput" placeholder='{"apiKey": "...", "authDomain": "...", ...}'></textarea>
-    <button onclick="conectar()">Conectar a Firebase</button>
-    <div id="conexionResultado" class="result"></div>
-  </div>
-
   <!-- PASO 2: QUIÉN ERES -->
-  <div class="card" id="pasoQuienEres" style="display:none;">
-    <h2>Paso 2 — ¿Quién eres?</h2>
-    <p class="step-desc">Como todavía no hay Authentication (eso viene en un capítulo posterior), elige con qué perfil vas a navegar la app.</p>
-    <div id="listaPerfiles"><p class="empty">Cargando perfiles desde <code>perfiles_publicos</code>...</p></div>
+  <div class="card" id="pasoQuienEres">
+    <h2>¿Quién eres?</h2>
+    <p class="step-desc">Elige con qué perfil vas a navegar BirdMatch Lima.</p>
+    <div id="listaPerfiles"><p class="empty">Cargando perfiles...</p></div>
   </div>
 
   <!-- PASO 3: SWIPE -->
@@ -109,12 +100,6 @@
       <div class="log" id="log">Esperando acciones...</div>
     </div>
 
-    <div class="card">
-      <h2>Verificación 2 del Capítulo 10</h2>
-      <p class="step-desc">Intenta leer <code>perfiles_privados</code> directamente desde esta página — con las reglas publicadas, debe fallar.</p>
-      <button onclick="probarLecturaPrivada()">Intentar leer perfiles_privados</button>
-      <div id="privadoResultado" class="result"></div>
-    </div>
   </div>
 
 </div>
@@ -125,33 +110,25 @@
     getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
-  let db = null;
+  // Configuración del proyecto birdmatch-lima — no es secreta (Capítulo 6/7)
+  const firebaseConfig = {
+    apiKey: "AIzaSyAnfbt24mnC1cR_sMl2FSsnNXaMbLc2PO0",
+    authDomain: "birdmatch-lima.firebaseapp.com",
+    projectId: "birdmatch-lima",
+    storageBucket: "birdmatch-lima.firebasestorage.app",
+    messagingSenderId: "166632281489",
+    appId: "1:166632281489:web:03ec3d3c4b92413aa17630"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
   let mi = null; // { id, nombre, nivel }
   let cola = [];
   let idx = 0;
   const complemento = { inicio:"experto", aficionado:"aficionado", experto:"inicio" };
   const emojiPorNivel = { inicio:"🐣 Inicio", aficionado:"🦉 Aficionado", experto:"🦅 Experto" };
 
-  window.conectar = async function() {
-    const raw = document.getElementById('configInput').value.trim();
-    const resultado = document.getElementById('conexionResultado');
-    if (!raw) { resultado.className='result fail'; resultado.textContent='❌ Pega tu firebaseConfig primero.'; return; }
-
-    let config;
-    try { config = JSON.parse(raw); }
-    catch(e){ resultado.className='result fail'; resultado.textContent='❌ JSON inválido. Revisa comillas dobles y comas.'; return; }
-
-    try {
-      const app = initializeApp(config);
-      db = getFirestore(app);
-      resultado.className='result ok';
-      resultado.textContent = `✅ Conectado a "${config.projectId}".`;
-      await cargarPerfiles();
-    } catch(e){
-      resultado.className='result fail';
-      resultado.textContent = '❌ Error: ' + e.message;
-    }
-  };
+  cargarPerfiles(); // arranca solo al cargar la página, sin pasos manuales
 
   async function cargarPerfiles(){
     document.getElementById('pasoQuienEres').style.display = 'block';
@@ -244,21 +221,6 @@
     banner.style.display = 'block';
     setTimeout(()=> banner.style.display='none', 4000);
   }
-
-  window.probarLecturaPrivada = async function(){
-    const resultado = document.getElementById('privadoResultado');
-    resultado.className = 'result';
-    resultado.style.display = 'block';
-    resultado.textContent = '⏳ Intentando leer perfiles_privados...';
-    try {
-      const snap = await getDocs(collection(db, "perfiles_privados"));
-      resultado.className = 'result fail';
-      resultado.textContent = `⚠️ Se pudo leer (${snap.size} documentos) — revisa que tu regla diga "allow read: if false" en perfiles_privados.`;
-    } catch(e){
-      resultado.className = 'result ok';
-      resultado.textContent = `✅ Bloqueado como se esperaba: "${e.message}". Las reglas del Capítulo 10 están funcionando.`;
-    }
-  };
 
   function log(texto){
     const el = document.getElementById('log');
