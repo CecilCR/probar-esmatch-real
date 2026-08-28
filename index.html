@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BirdMatch Lima — Versión conectada (Capítulo 10)</title>
+<style>
+  :root{
+    --dark-green:#1B4332; --green:#2D6A4F; --light-green:#40916C;
+    --cream:#F5F3EE; --amber:#D97706; --red:#DC2626; --blue:#2563EB;
+    --border:#D1D5DB; --radius-lg:16px;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif; background:var(--cream); margin:0; color:#1F2937;}
+  .topbar{background:#1E3A5F; color:white; padding:16px 24px;}
+  .topbar h1{margin:0; font-size:1.15rem;}
+  .topbar p{margin:4px 0 0; font-size:.82rem; opacity:.85;}
+  .container{max-width:520px; margin:24px auto; padding:0 16px;}
+  .card{background:white; border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px; margin-bottom:16px;}
+  .card h2{margin:0 0 4px; font-size:1rem; color:#1B4332;}
+  .step-desc{font-size:.83rem; color:#6B7280; margin:0 0 12px;}
+  textarea, input[type=text]{width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:.85rem; font-family:monospace;}
+  textarea{min-height:100px; resize:vertical;}
+  button{background:var(--blue); color:white; border:none; padding:10px 18px; border-radius:8px; font-weight:600; font-size:.88rem; cursor:pointer; margin-top:10px;}
+  button:hover{opacity:.9;}
+  button:disabled{background:#9CA3AF; cursor:not-allowed;}
+  .alert{border-radius:10px; padding:10px 14px; font-size:.84rem; border:1px solid; margin-bottom:14px;}
+  .alert-blue{background:#EFF6FF; border-color:var(--blue); color:#1E40AF;}
+  .alert-amber{background:#FFFBEB; border-color:var(--amber); color:#92400E;}
+  .result{margin-top:10px; padding:10px 14px; border-radius:8px; font-size:.85rem; font-weight:600; display:none;}
+  .result.ok{background:#F0FDF4; color:#166534; border:1px solid #BBF7D0; display:block;}
+  .result.fail{background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; display:block;}
+  .perfil-btn{
+    display:block; width:100%; text-align:left; background:white; border:1px solid var(--border);
+    border-radius:10px; padding:10px 14px; margin-bottom:8px; cursor:pointer; font-size:.9rem;
+  }
+  .perfil-btn:hover{border-color:var(--green); background:#F0FDF4;}
+
+  /* swipe card */
+  .app-header{background:var(--dark-green); color:white; border-radius:16px 16px 0 0; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; font-weight:700;}
+  .swipe-card{background:white; border-radius:0 0 16px 16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,.08);}
+  .bird-photo{background:linear-gradient(160deg, var(--green), var(--dark-green)); height:180px; display:flex; align-items:center; justify-content:center; font-size:4.5rem; position:relative;}
+  .level-badge{position:absolute; bottom:10px; right:10px; background:rgba(255,255,255,.92); padding:4px 12px; border-radius:999px; font-size:.75rem; font-weight:700; color:#1B4332;}
+  .card-body{padding:16px;}
+  .card-body h2{margin:0 0 6px; font-size:1.2rem;}
+  .tags{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;}
+  .tag{background:#E8F5E9; color:var(--dark-green); padding:3px 10px; border-radius:999px; font-size:.72rem; font-weight:600;}
+  .actions{display:flex; justify-content:space-around; padding:14px; background:white; border-radius:0 0 16px 16px;}
+  .action-btn{width:48px; height:48px; border-radius:50%; border:1px solid var(--border); background:white; font-size:1.1rem; cursor:pointer;}
+  .action-btn:hover{background:#F3F4F6;}
+  .action-btn.like{color:var(--red); border-color:var(--red);}
+  .log{font-family:monospace; font-size:.76rem; background:#111827; color:#D1D5DB; padding:10px; border-radius:8px; max-height:180px; overflow-y:auto; margin-top:10px; white-space:pre-wrap;}
+  .match-banner{background:#FEF3C7; border:1px solid #FDE68A; color:#92400E; padding:12px 14px; border-radius:10px; font-weight:700; text-align:center; margin-bottom:14px; display:none;}
+  code{background:#F3F4F6; padding:1px 5px; border-radius:4px;}
+  .empty{color:#9CA3AF; font-style:italic; font-size:.85rem;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>BirdMatch Lima — Versión conectada</h1>
+  <p>Capítulo 10 · Firestore real, sin Authentication todavía</p>
+</div>
+
+<div class="container">
+
+  <!-- PASO 1: CONFIG -->
+  <div class="card" id="pasoConfig">
+    <h2>Paso 1 — Conectar a tu proyecto</h2>
+    <p class="step-desc">Pega tu <code>firebaseConfig</code> (formato JSON, igual que en el Capítulo 9).</p>
+    <textarea id="configInput" placeholder='{"apiKey": "...", "authDomain": "...", ...}'></textarea>
+    <button onclick="conectar()">Conectar a Firebase</button>
+    <div id="conexionResultado" class="result"></div>
+  </div>
+
+  <!-- PASO 2: QUIÉN ERES -->
+  <div class="card" id="pasoQuienEres" style="display:none;">
+    <h2>Paso 2 — ¿Quién eres?</h2>
+    <p class="step-desc">Como todavía no hay Authentication (eso viene en un capítulo posterior), elige con qué perfil vas a navegar la app.</p>
+    <div id="listaPerfiles"><p class="empty">Cargando perfiles desde <code>perfiles_publicos</code>...</p></div>
+  </div>
+
+  <!-- PASO 3: SWIPE -->
+  <div id="pasoSwipe" style="display:none;">
+    <div class="match-banner" id="matchBanner"></div>
+    <div class="app-header">
+      <span>🐦 Navegando como <span id="miNombreLabel"></span></span>
+      <span id="cardCount" style="font-weight:400; font-size:.78rem;"></span>
+    </div>
+    <div class="swipe-card">
+      <div class="bird-photo">
+        🦜
+        <span class="level-badge" id="levelBadge"></span>
+      </div>
+      <div class="card-body">
+        <h2 id="perfilNombre"></h2>
+        <div class="tags" id="perfilTags"></div>
+      </div>
+      <div class="actions">
+        <button class="action-btn" onclick="reaccionar('pasar')">✕</button>
+        <button class="action-btn" onclick="reaccionar('estrella')">★</button>
+        <button class="action-btn like" onclick="reaccionar('like')">♥</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h2>Registro de actividad</h2>
+      <div class="log" id="log">Esperando acciones...</div>
+    </div>
+
+    <div class="card">
+      <h2>Verificación 2 del Capítulo 10</h2>
+      <p class="step-desc">Intenta leer <code>perfiles_privados</code> directamente desde esta página — con las reglas publicadas, debe fallar.</p>
+      <button onclick="probarLecturaPrivada()">Intentar leer perfiles_privados</button>
+      <div id="privadoResultado" class="result"></div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import {
+    getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  let db = null;
+  let mi = null; // { id, nombre, nivel }
+  let cola = [];
+  let idx = 0;
+  const complemento = { inicio:"experto", aficionado:"aficionado", experto:"inicio" };
+  const emojiPorNivel = { inicio:"🐣 Inicio", aficionado:"🦉 Aficionado", experto:"🦅 Experto" };
+
+  window.conectar = async function() {
+    const raw = document.getElementById('configInput').value.trim();
+    const resultado = document.getElementById('conexionResultado');
+    if (!raw) { resultado.className='result fail'; resultado.textContent='❌ Pega tu firebaseConfig primero.'; return; }
+
+    let config;
+    try { config = JSON.parse(raw); }
+    catch(e){ resultado.className='result fail'; resultado.textContent='❌ JSON inválido. Revisa comillas dobles y comas.'; return; }
+
+    try {
+      const app = initializeApp(config);
+      db = getFirestore(app);
+      resultado.className='result ok';
+      resultado.textContent = `✅ Conectado a "${config.projectId}".`;
+      await cargarPerfiles();
+    } catch(e){
+      resultado.className='result fail';
+      resultado.textContent = '❌ Error: ' + e.message;
+    }
+  };
+
+  async function cargarPerfiles(){
+    document.getElementById('pasoQuienEres').style.display = 'block';
+    const listaEl = document.getElementById('listaPerfiles');
+    try {
+      const snap = await getDocs(collection(db, "perfiles_publicos"));
+      if (snap.empty) {
+        listaEl.innerHTML = '<p class="empty">No se encontraron documentos en perfiles_publicos. Revisa el Capítulo 10.</p>';
+        return;
+      }
+      listaEl.innerHTML = '';
+      snap.forEach(doc => {
+        const p = doc.data();
+        const btn = document.createElement('button');
+        btn.className = 'perfil-btn';
+        btn.textContent = `${p.nombre}, ${p.edad} — ${emojiPorNivel[p.nivel] || p.nivel}`;
+        btn.onclick = () => elegirPerfil(doc.id, p);
+        listaEl.appendChild(btn);
+      });
+    } catch(e) {
+      listaEl.innerHTML = `<p class="result fail" style="display:block;">❌ Error leyendo perfiles_publicos: ${e.message}</p>`;
+    }
+  }
+
+  async function elegirPerfil(id, datos){
+    mi = { id, nombre: datos.nombre, nivel: datos.nivel };
+    document.getElementById('pasoQuienEres').style.display = 'none';
+    document.getElementById('pasoSwipe').style.display = 'block';
+    document.getElementById('miNombreLabel').textContent = datos.nombre;
+    await cargarCola();
+  }
+
+  async function cargarCola(){
+    const nivelBuscado = complemento[mi.nivel];
+    const q = query(collection(db, "perfiles_publicos"), where("nivel","==",nivelBuscado));
+    const snap = await getDocs(q);
+    cola = [];
+    snap.forEach(doc => { if (doc.id !== mi.id) cola.push({ id: doc.id, ...doc.data() }); });
+    idx = 0;
+    log(`> Buscando complementarios de nivel "${mi.nivel}" → "${nivelBuscado}": ${cola.length} encontrados`);
+    renderCard();
+  }
+
+  function renderCard(){
+    document.getElementById('cardCount').textContent = cola.length ? `${idx+1} / ${cola.length}` : '0 / 0';
+    if (idx >= cola.length){
+      document.getElementById('perfilNombre').textContent = 'No hay más perfiles complementarios';
+      document.getElementById('perfilTags').innerHTML = '';
+      document.getElementById('levelBadge').textContent = '';
+      return;
+    }
+    const p = cola[idx];
+    document.getElementById('perfilNombre').textContent = `${p.nombre}, ${p.edad}`;
+    document.getElementById('perfilTags').innerHTML = (p.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
+    document.getElementById('levelBadge').textContent = emojiPorNivel[p.nivel] || p.nivel;
+  }
+
+  window.reaccionar = async function(tipo){
+    if (idx >= cola.length) return;
+    const p = cola[idx];
+
+    if (tipo === 'pasar'){ log(`> ✕ Pasaste a ${p.nombre}`); idx++; renderCard(); return; }
+    if (tipo === 'estrella'){ log(`> ★ Marcaste a ${p.nombre} como favorito (no se guarda en esta demo)`); idx++; renderCard(); return; }
+
+    // LIKE — esto sí escribe en Firestore de verdad
+    log(`> ♥ Enviando like: de="${mi.id}" a="${p.id}"...`);
+    try {
+      await addDoc(collection(db, "Likes"), { de: mi.id, a: p.id, timestamp: serverTimestamp() });
+      log(`> ✅ Like guardado en la colección "Likes"`);
+
+      // Verificar match mutuo: ¿existe un like de p.id hacia mi.id?
+      const q = query(collection(db, "Likes"), where("de","==", p.id), where("a","==", mi.id));
+      const snap = await getDocs(q);
+      if (!snap.empty){
+        log(`> 🎉 esMatch(${mi.nombre}, ${p.nombre}) → true`);
+        mostrarMatch(p.nombre);
+      } else {
+        log(`> esMatch(${mi.nombre}, ${p.nombre}) → false (aún no es mutuo)`);
+      }
+    } catch(e){
+      log(`> ❌ Error al guardar like: ${e.message}`);
+    }
+    idx++;
+    renderCard();
+  };
+
+  function mostrarMatch(nombreOtro){
+    const banner = document.getElementById('matchBanner');
+    banner.textContent = `🎉 ¡MATCH con ${nombreOtro}!`;
+    banner.style.display = 'block';
+    setTimeout(()=> banner.style.display='none', 4000);
+  }
+
+  window.probarLecturaPrivada = async function(){
+    const resultado = document.getElementById('privadoResultado');
+    resultado.className = 'result';
+    resultado.style.display = 'block';
+    resultado.textContent = '⏳ Intentando leer perfiles_privados...';
+    try {
+      const snap = await getDocs(collection(db, "perfiles_privados"));
+      resultado.className = 'result fail';
+      resultado.textContent = `⚠️ Se pudo leer (${snap.size} documentos) — revisa que tu regla diga "allow read: if false" en perfiles_privados.`;
+    } catch(e){
+      resultado.className = 'result ok';
+      resultado.textContent = `✅ Bloqueado como se esperaba: "${e.message}". Las reglas del Capítulo 10 están funcionando.`;
+    }
+  };
+
+  function log(texto){
+    const el = document.getElementById('log');
+    if (el.textContent === 'Esperando acciones...') el.textContent = '';
+    el.textContent += texto + '\n';
+    el.scrollTop = el.scrollHeight;
+  }
+</script>
+
+</body>
+</html>
