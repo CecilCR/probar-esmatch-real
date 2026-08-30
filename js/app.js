@@ -472,6 +472,8 @@ window.mostrarListaPerfiles = function() {
 // ============================================
 // GUARDAR MI PERFIL / EXPLORAR POR NIVEL
 // ============================================
+
+window.guardarMiPerfil = async function() {
     console.log("🔍 guardarMiPerfil ejecutado");
 
     const user = auth.currentUser;
