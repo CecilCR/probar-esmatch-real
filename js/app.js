@@ -24,7 +24,6 @@ import {
 
 // ============================================
 // CONFIGURACIÓN DE FIREBASE
-// ¡REEMPLAZA CON TUS VALORES!
 // ============================================
 
 const firebaseConfig = {
@@ -53,10 +52,6 @@ console.log("✅ Firebase inicializado correctamente");
 let perfilesDisponibles = [];
 let indiceActual = 0;
 let misTags = [];
-
-// ============================================
-// ALGORITMO DE COMPLEMENTARIEDAD
-// ============================================
 
 // ============================================
 // FUNCIONES DE AUTENTICACIÓN
@@ -325,7 +320,6 @@ function calcularCompatibilidad(misTags, tagsPerfil) {
     }
 
     const compartidos = a.filter(tag => b.includes(tag));
-    // Similitud de Jaccard: intersección / unión
     const union = new Set([...a, ...b]);
     const porcentaje = Math.round((compartidos.length / union.size) * 100);
 
@@ -417,6 +411,47 @@ function siguientePerfil() {
 }
 
 // ============================================
+// MATCHES — registro persistente de matches mutuos
+// ============================================
+
+// ID determinístico: combinar ambos UID ordenados alfabéticamente.
+// Ventaja sobre addDoc(): si los dos usuarios se dan like el uno al
+// otro en cualquier orden, siempre generan el MISMO ID de documento,
+// así que nunca se puede crear un match duplicado por accidente.
+function idDeMatch(uid1, uid2) {
+    return [uid1, uid2].sort().join('_');
+}
+
+async function crearMatchSiNoExiste(uid1, uid2, nombre1, nombre2) {
+    const matchId = idDeMatch(uid1, uid2);
+    const matchRef = doc(db, "matches", matchId);
+    const existente = await getDoc(matchRef);
+
+    if (!existente.exists()) {
+        await setDoc(matchRef, {
+            participantes: [uid1, uid2].sort(),
+            nombres: { [uid1]: nombre1, [uid2]: nombre2 },
+            timestamp: new Date().toISOString()
+        });
+        console.log(`✅ Match creado en Firestore: ${matchId}`);
+    } else {
+        console.log(`ℹ️ El match ${matchId} ya existía, no se duplica`);
+    }
+}
+
+// ============================================
+// BANNER DE MATCH
+// ============================================
+
+function mostrarBannerMatch(nombreOtro) {
+    const banner = document.getElementById('match-banner');
+    if (!banner) return;
+    banner.textContent = `🎉 ¡Match con ${nombreOtro}! 🎉`;
+    banner.classList.remove('hidden');
+    setTimeout(() => banner.classList.add('hidden'), 4000);
+}
+
+// ============================================
 // DAR "ME GUSTA" A UN PERFIL
 // ============================================
 
@@ -427,6 +462,13 @@ window.gustarPerfil = async function(perfilId) {
         return;
     }
 
+    // Guardamos el perfil actual ANTES de avanzar el índice,
+    // para tener su nombre disponible al armar el banner/match.
+    const perfilActual = perfilesDisponibles[indiceActual];
+    const miNombre = document.getElementById('usuario-nombre-match').textContent
+        || document.getElementById('usuario-nombre').textContent
+        || 'Alguien';
+
     try {
         await addDoc(collection(db, "Likes"), {
             de: user.uid,
@@ -436,6 +478,7 @@ window.gustarPerfil = async function(perfilId) {
 
         console.log(`❤️ Like dado al perfil: ${perfilId}`);
 
+        // ¿La otra persona ya me dio like antes? (like recíproco)
         const q = query(
             collection(db, "Likes"),
             where("de", "==", perfilId),
@@ -444,7 +487,9 @@ window.gustarPerfil = async function(perfilId) {
         const snapshot = await getDocs(q);
 
         if (!snapshot.empty) {
-            alert('🎉 ¡ES MATCH! Ambos se gustan. 🎉');
+            const nombreOtro = perfilActual?.nombre || 'esa persona';
+            mostrarBannerMatch(nombreOtro);
+            await crearMatchSiNoExiste(user.uid, perfilId, miNombre, nombreOtro);
         }
 
         siguientePerfil();
@@ -491,14 +536,11 @@ window.guardarMiPerfil = async function() {
     const miNombre = document.getElementById('usuario-nombre').textContent;
 
     try {
-        // Datos privados, ligados a la cuenta autenticada
         await setDoc(doc(db, "usuarios", user.uid), {
             nivel: miNivel,
             tags: misTags
         }, { merge: true });
 
-        // Perfil público — para que OTROS usuarios puedan encontrarlo y filtrarlo por nivel.
-        // Usa el mismo uid como ID de documento, así es fácil excluirse a sí mismo del swipe.
         await setDoc(doc(db, "perfiles", user.uid), {
             nombre: miNombre,
             nivel: miNivel,
@@ -514,10 +556,7 @@ window.guardarMiPerfil = async function() {
 };
 
 // ============================================
-// EXPLORAR PERFILES POR NIVEL — filtro directo,
-// no complementariedad. La compatibilidad (por
-// tags) se muestra igual, sin importar qué nivel
-// se esté explorando.
+// EXPLORAR PERFILES POR NIVEL — filtro directo
 // ============================================
 
 window.verPerfilesPorNivel = async function(nivel) {
@@ -538,7 +577,6 @@ window.verPerfilesPorNivel = async function(nivel) {
     document.getElementById('usuario-nombre-match').textContent = nombre || 'Sin nombre';
     document.getElementById('usuario-email-match').textContent = email || 'Sin correo';
 
-    // Filtro directo: mismo nivel que se clickeó, no el complementario
     await window.cargarPerfilesPorNivelDirecto(nivel);
 };
 
@@ -595,7 +633,6 @@ onAuthStateChanged(auth, async (user) => {
                 mostrarUsuarioAutenticado(userData);
                 mostrarSeccionPrincipal();
 
-                // Precargar perfil ya guardado, si existe
                 if (userData.tags) {
                     misTags = userData.tags;
                     document.getElementById('mis-tags').value = userData.tags.join(', ');
