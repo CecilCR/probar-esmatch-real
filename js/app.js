@@ -71,7 +71,7 @@ function obtenerNivelComplementario(miNivel) {
 // FUNCIONES DE AUTENTICACIÓN
 // ============================================
 
-async function registrarUsuario(email, password, nombre, rol) {
+async function registrarUsuario(email, password, nombre) {
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
@@ -79,7 +79,6 @@ async function registrarUsuario(email, password, nombre, rol) {
         await setDoc(doc(db, "usuarios", user.uid), {
             nombre: nombre,
             email: email,
-            rol: rol,
             activo: true,
             creado: new Date().toISOString()
         });
@@ -173,11 +172,9 @@ window.mostrarRegistro = function() {
 function mostrarUsuarioAutenticado(userData) {
     const nombreEl = document.getElementById('usuario-nombre');
     const emailEl = document.getElementById('usuario-email');
-    const rolEl = document.getElementById('usuario-rol');
 
     if (nombreEl) nombreEl.textContent = userData.nombre || 'Sin nombre';
     if (emailEl) emailEl.textContent = userData.email || 'Sin correo';
-    if (rolEl) rolEl.textContent = userData.rol || 'Sin rol';
 }
 
 // ============================================
@@ -188,7 +185,6 @@ window.handleRegistro = async function() {
     const nombre = document.getElementById('registro-nombre').value.trim();
     const email = document.getElementById('registro-email').value.trim();
     const password = document.getElementById('registro-password').value;
-    const rol = document.getElementById('registro-rol').value;
 
     if (!nombre || !email || !password || password.length < 6) {
         mostrarMensaje('registro-mensaje', 'Completa todos los campos (contraseña mínimo 6 caracteres)', 'error');
@@ -197,7 +193,7 @@ window.handleRegistro = async function() {
 
     limpiarMensaje('registro-mensaje');
 
-    const resultado = await registrarUsuario(email, password, nombre, rol);
+    const resultado = await registrarUsuario(email, password, nombre);
 
     if (resultado.success) {
         mostrarMensaje('registro-mensaje', '✅ Cuenta creada correctamente', 'exito');
@@ -519,7 +515,7 @@ window.cargarPerfilesMatch = async function(nivel) {
 // SELECCIONAR NIVEL (ACTUALIZADA CON DEPURACIÓN)
 // ============================================
 
-window.seleccionarNivel = function(nivel) {
+window.seleccionarNivel = async function(nivel) {
     console.log("🔍 seleccionarNivel ejecutado con nivel:", nivel);
     
     const user = auth.currentUser;
@@ -531,12 +527,14 @@ window.seleccionarNivel = function(nivel) {
     console.log("✅ Usuario autenticado:", user.uid);
 
     try {
-        setDoc(doc(db, "usuarios", user.uid), {
+        await setDoc(doc(db, "usuarios", user.uid), {
             nivel: nivel
         }, { merge: true });
         console.log(`✅ Nivel seleccionado y guardado: ${nivel}`);
     } catch (error) {
         console.error('❌ Error al guardar nivel:', error);
+        alert('❌ No se pudo guardar tu nivel: ' + error.message);
+        return;
     }
 
     console.log("🔄 Ocultando sección principal, mostrando match");
@@ -545,13 +543,11 @@ window.seleccionarNivel = function(nivel) {
 
     const nombre = document.getElementById('usuario-nombre').textContent;
     const email = document.getElementById('usuario-email').textContent;
-    const rol = document.getElementById('usuario-rol').textContent;
     
-    console.log("📋 Datos para match:", { nombre, email, rol });
+    console.log("📋 Datos para match:", { nombre, email });
     
     document.getElementById('usuario-nombre-match').textContent = nombre || 'Sin nombre';
     document.getElementById('usuario-email-match').textContent = email || 'Sin correo';
-    document.getElementById('usuario-rol-match').textContent = rol || 'Sin rol';
 
     console.log("⏳ Cargando perfiles match para nivel:", nivel);
     window.cargarPerfilesMatch(nivel);
