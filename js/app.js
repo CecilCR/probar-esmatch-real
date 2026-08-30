@@ -11,7 +11,8 @@ import {
     where,
     doc,
     getDoc,
-    setDoc
+    setDoc,
+    addDoc
 } from "firebase/firestore";
 import {
     getAuth,
@@ -23,9 +24,10 @@ import {
 
 // ============================================
 // CONFIGURACIÓN DE FIREBASE
+// ¡REEMPLAZA CON TUS VALORES!
 // ============================================
 
-const firebaseConfig ={
+const firebaseConfig = {
   apiKey: "AIzaSyAnfbt24mnC1cR_sMl2FSsnNXaMbLc2PO0",
   authDomain: "birdmatch-lima.firebaseapp.com",
   projectId: "birdmatch-lima",
@@ -33,6 +35,10 @@ const firebaseConfig ={
   messagingSenderId: "166632281489",
   appId: "1:166632281489:web:03ec3d3c4b92413aa17630"
 };
+
+// ============================================
+// INICIALIZAR FIREBASE
+// ============================================
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -92,24 +98,6 @@ async function cerrarSesion() {
 // FUNCIONES DE INTERFAZ
 // ============================================
 
-window.mostrarRegistro = function() {
-    document.getElementById('seccion-registro').classList.remove('hidden');
-    document.getElementById('seccion-login').classList.add('hidden');
-    document.getElementById('seccion-principal').classList.add('hidden');
-};
-
-window.mostrarLogin = function() {
-    document.getElementById('seccion-registro').classList.add('hidden');
-    document.getElementById('seccion-login').classList.remove('hidden');
-    document.getElementById('seccion-principal').classList.add('hidden');
-};
-
-function mostrarSeccionPrincipal() {
-    document.getElementById('seccion-registro').classList.add('hidden');
-    document.getElementById('seccion-login').classList.add('hidden');
-    document.getElementById('seccion-principal').classList.remove('hidden');
-}
-
 function mostrarMensaje(elementoId, mensaje, tipo) {
     const elemento = document.getElementById(elementoId);
     if (!elemento) return;
@@ -118,11 +106,45 @@ function mostrarMensaje(elementoId, mensaje, tipo) {
     elemento.classList.remove('hidden');
 }
 
+function limpiarMensaje(elementoId) {
+    const elemento = document.getElementById(elementoId);
+    if (!elemento) return;
+    elemento.textContent = '';
+    elemento.className = 'mensaje hidden';
+}
+
+function mostrarSeccionPrincipal() {
+    const registro = document.getElementById('seccion-registro');
+    const login = document.getElementById('seccion-login');
+    const principal = document.getElementById('seccion-principal');
+    if (registro) registro.classList.add('hidden');
+    if (login) login.classList.add('hidden');
+    if (principal) principal.classList.remove('hidden');
+}
+
+window.mostrarLogin = function() {
+    const registro = document.getElementById('seccion-registro');
+    const login = document.getElementById('seccion-login');
+    const principal = document.getElementById('seccion-principal');
+    if (registro) registro.classList.add('hidden');
+    if (login) login.classList.remove('hidden');
+    if (principal) principal.classList.add('hidden');
+};
+
+window.mostrarRegistro = function() {
+    const registro = document.getElementById('seccion-registro');
+    const login = document.getElementById('seccion-login');
+    const principal = document.getElementById('seccion-principal');
+    if (registro) registro.classList.remove('hidden');
+    if (login) login.classList.add('hidden');
+    if (principal) principal.classList.add('hidden');
+};
+
 function mostrarUsuarioAutenticado(userData) {
     const nombreEl = document.getElementById('usuario-nombre');
     const emailEl = document.getElementById('usuario-email');
     const rolEl = document.getElementById('usuario-rol');
-    
+
     if (nombreEl) nombreEl.textContent = userData.nombre || 'Sin nombre';
     if (emailEl) emailEl.textContent = userData.email || 'Sin correo';
     if (rolEl) rolEl.textContent = userData.rol || 'Sin rol';
@@ -138,12 +160,21 @@ window.handleRegistro = async function() {
     const password = document.getElementById('registro-password').value;
     const rol = document.getElementById('registro-rol').value;
 
-    if (!nombre || !email || !password || password.length < 6) {
-        mostrarMensaje('registro-mensaje', 'Completa todos los campos (contraseña mínimo 6 caracteres)', 'error');
+    if (!nombre) {
+        mostrarMensaje('registro-mensaje', 'Por favor, ingresa tu nombre completo', 'error');
+        return;
+    }
+    if (!email) {
+        mostrarMensaje('registro-mensaje', 'Por favor, ingresa tu correo electrónico', 'error');
+        return;
+    }
+    if (!password || password.length < 6) {
+        mostrarMensaje('registro-mensaje', 'La contraseña debe tener al menos 6 caracteres', 'error');
         return;
     }
 
     limpiarMensaje('registro-mensaje');
+
     const resultado = await registrarUsuario(email, password, nombre, rol);
 
     if (resultado.success) {
@@ -152,8 +183,8 @@ window.handleRegistro = async function() {
         document.getElementById('registro-email').value = '';
         document.getElementById('registro-password').value = '';
         setTimeout(() => {
-            document.getElementById('registro-mensaje').textContent = '';
-            mostrarLogin();
+            limpiarMensaje('registro-mensaje');
+            window.mostrarLogin();
         }, 2000);
     } else {
         mostrarMensaje('registro-mensaje', `❌ Error: ${resultado.error}`, 'error');
@@ -168,12 +199,17 @@ window.handleLogin = async function() {
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
 
-    if (!email || !password) {
-        mostrarMensaje('login-mensaje', 'Completa todos los campos', 'error');
+    if (!email) {
+        mostrarMensaje('login-mensaje', 'Por favor, ingresa tu correo electrónico', 'error');
+        return;
+    }
+    if (!password) {
+        mostrarMensaje('login-mensaje', 'Por favor, ingresa tu contraseña', 'error');
         return;
     }
 
     limpiarMensaje('login-mensaje');
+
     const resultado = await iniciarSesion(email, password);
 
     if (resultado.success) {
@@ -184,6 +220,10 @@ window.handleLogin = async function() {
             mensajeError = 'No existe una cuenta con este correo';
         } else if (resultado.error.includes('wrong-password')) {
             mensajeError = 'Contraseña incorrecta';
+        } else if (resultado.error.includes('invalid-email')) {
+            mensajeError = 'Correo electrónico inválido';
+        } else if (resultado.error.includes('too-many-requests')) {
+            mensajeError = 'Demasiados intentos. Espera unos minutos';
         }
         mostrarMensaje('login-mensaje', `❌ Error: ${mensajeError}`, 'error');
     }
@@ -197,7 +237,9 @@ window.handleCerrarSesion = async function() {
     if (!confirm('¿Estás seguro de que quieres cerrar sesión?')) return;
     const resultado = await cerrarSesion();
     if (resultado.success) {
-        mostrarLogin();
+        window.mostrarLogin();
+    } else {
+        alert('Error al cerrar sesión: ' + resultado.error);
     }
 };
 
@@ -218,10 +260,10 @@ window.cargarPerfiles = async function() {
     contenedor.innerHTML = '<p>⏳ Cargando perfiles...</p>';
 
     try {
-        // Intentar cargar desde perfiles_publicos (colección que creamos en el Capítulo 9)
         let perfiles = [];
         let snapshot;
-        
+
+        // Intentar cargar desde perfiles_publicos
         try {
             snapshot = await getDocs(collection(db, "perfiles_publicos"));
             perfiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -241,7 +283,7 @@ window.cargarPerfiles = async function() {
         perfiles.forEach((perfil) => {
             const div = document.createElement('div');
             div.className = 'perfil-card';
-            
+
             const emojiNivel = {
                 'inicio': '😊',
                 'aficionado': '🐦',
@@ -281,21 +323,22 @@ onAuthStateChanged(auth, async (user) => {
                 console.log("📋 Datos del usuario:", userData);
                 mostrarUsuarioAutenticado(userData);
                 mostrarSeccionPrincipal();
-                
+
                 setTimeout(() => {
                     window.cargarPerfiles();
                 }, 500);
             } else {
                 console.log("⚠️ El usuario no tiene datos en Firestore");
-                mostrarLogin();
+                mostrarMensaje('login-mensaje', '⚠️ Usuario sin datos en Firestore', 'error');
+                window.mostrarLogin();
             }
         } catch (error) {
             console.error("❌ Error al obtener datos:", error);
-            mostrarLogin();
+            window.mostrarLogin();
         }
     } else {
         console.log("🔒 Usuario no autenticado");
-        mostrarLogin();
+        window.mostrarLogin();
     }
 });
 
