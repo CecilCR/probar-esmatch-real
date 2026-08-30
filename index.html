@@ -30,8 +30,10 @@
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
+            max-width: 650px;
             width: 100%;
+            max-height: 95vh;
+            overflow-y: auto;
         }
 
         h1 {
@@ -119,6 +121,14 @@
             background: #1976D2;
         }
 
+        .btn-success {
+            background: #4CAF50;
+        }
+
+        .btn-success:hover {
+            background: #388E3C;
+        }
+
         .btn-group {
             display: flex;
             gap: 10px;
@@ -178,12 +188,6 @@
             border-left: 4px solid #2196F3;
         }
 
-        .mensaje-advertencia {
-            background: #fff3e0;
-            color: #e65100;
-            border-left: 4px solid #FF9800;
-        }
-
         /* ==========================================
            INFO USUARIO
            ========================================== */
@@ -200,7 +204,7 @@
         }
 
         /* ==========================================
-           TARJETAS DE PERFILES
+           TARJETAS DE PERFILES (LISTA)
            ========================================== */
         .perfil-card {
             background: #f8f9fa;
@@ -254,29 +258,140 @@
             color: #333;
         }
 
-        .perfil-card .btn-like {
-            background: #ff4081;
-            color: white;
-            border: none;
-            padding: 8px 16px;
+        /* ==========================================
+           TARJETA DE MATCH (UN SOLO PERFIL)
+           ========================================== */
+        .perfil-match-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin: 15px 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid #eee;
+        }
+
+        .perfil-match-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .perfil-match-emoji {
+            font-size: 32px;
+        }
+
+        .perfil-match-header h2 {
+            color: #FF6D00;
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .perfil-match-nivel {
+            background: #e3f2fd;
+            padding: 2px 14px;
             border-radius: 20px;
+            font-size: 14px;
+            color: #1565C0;
+            font-weight: 600;
+        }
+
+        .perfil-match-bio {
+            color: #555;
+            font-size: 16px;
+            line-height: 1.6;
+            padding: 10px 0;
+            font-style: italic;
+        }
+
+        .perfil-match-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+
+        .perfil-match-tags span {
+            background: #e0e0e0;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .perfil-match-compatibilidad {
+            background: #e8f5e9;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: #2e7d32;
+            margin: 15px 0;
+            border: 2px solid #4CAF50;
+        }
+
+        .perfil-match-acciones {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .btn-match {
+            padding: 14px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-match:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-no {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .btn-no:hover {
+            background: #ffcdd2;
+        }
+
+        .btn-si {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .btn-si:hover {
+            background: #c8e6c9;
+        }
+
+        .btn-volver {
+            background: #e3f2fd;
+            color: #1565C0;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
-            margin-top: 10px;
+            font-weight: 600;
+            margin-bottom: 15px;
             transition: background 0.3s;
         }
 
-        .perfil-card .btn-like:hover {
-            background: #e91e63;
+        .btn-volver:hover {
+            background: #bbdefb;
         }
 
         /* ==========================================
            LISTA DE PERFILES
            ========================================== */
-        #lista-perfiles {
-            margin-top: 10px;
-        }
-
         #lista-perfiles .cargando {
             text-align: center;
             color: #999;
@@ -289,6 +404,7 @@
         @media (max-width: 480px) {
             .container {
                 padding: 20px;
+                max-height: 98vh;
             }
             h1 {
                 font-size: 24px;
@@ -296,6 +412,13 @@
             .btn-group .btn {
                 font-size: 14px;
                 padding: 10px;
+            }
+            .btn-match {
+                padding: 12px 25px;
+                font-size: 16px;
+            }
+            .perfil-match-header h2 {
+                font-size: 20px;
             }
         }
     </style>
@@ -373,7 +496,7 @@
         </div>
 
         <!-- ========================================================== -->
-        <!-- SECCIÓN PRINCIPAL (PROTEGIDA)                               -->
+        <!-- SECCIÓN PRINCIPAL (LISTA DE PERFILES)                       -->
         <!-- ========================================================== -->
         <div id="seccion-principal" class="hidden">
             <h1>🐦 BirdMatch Lima</h1>
@@ -398,13 +521,37 @@
             </div>
 
             <!-- LISTA DE PERFILES -->
-            <h3>👀 Perfiles disponibles</h3>
+            <h3>👀 Todos los perfiles disponibles</h3>
             <div id="lista-perfiles">
                 <p class="cargando">⏳ Cargando perfiles...</p>
             </div>
 
             <!-- BOTÓN ACTUALIZAR -->
             <button class="btn" onclick="cargarPerfiles()" style="margin-top: 10px;">🔄 Actualizar perfiles</button>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- SECCIÓN DE MATCH (UN PERFIL A LA VEZ)                      -->
+        <!-- ========================================================== -->
+        <div id="seccion-match" class="hidden">
+            <h1>🐦 BirdMatch Lima</h1>
+            <p class="subtitulo">Encuentra compañeros para observar aves</p>
+
+            <!-- INFORMACIÓN DEL USUARIO -->
+            <div id="info-usuario-match" class="info-usuario">
+                <strong>👤 Usuario:</strong> <span id="usuario-nombre-match">Cargando...</span><br />
+                <strong>📧 Correo:</strong> <span id="usuario-email-match">Cargando...</span><br />
+                <strong>🎯 Rol:</strong> <span id="usuario-rol-match">Cargando...</span>
+            </div>
+
+            <!-- BOTONES SUPERIORES -->
+            <button class="btn btn-danger" onclick="handleCerrarSesion()" style="margin-bottom: 10px;">🚪 Cerrar sesión</button>
+            <button class="btn-volver" onclick="mostrarListaPerfiles()">📋 Ver todos los perfiles</button>
+
+            <!-- CONTENEDOR DEL PERFIL ACTUAL -->
+            <div id="perfil-match">
+                <p>⏳ Selecciona tu nivel para comenzar</p>
+            </div>
         </div>
 
     </div>
