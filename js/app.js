@@ -58,16 +58,6 @@ let misTags = [];
 // ALGORITMO DE COMPLEMENTARIEDAD
 // ============================================
 
-const complemento = {
-    "inicio": "experto",
-    "aficionado": "aficionado",
-    "experto": "inicio"
-};
-
-function obtenerNivelComplementario(miNivel) {
-    return complemento[miNivel] || null;
-}
-
 // ============================================
 // FUNCIONES DE AUTENTICACIÓN
 // ============================================
@@ -480,19 +470,80 @@ window.mostrarListaPerfiles = function() {
 };
 
 // ============================================
-// CARGAR PERFILES PARA MATCH
+// GUARDAR MI PERFIL / EXPLORAR POR NIVEL
 // ============================================
+    console.log("🔍 guardarMiPerfil ejecutado");
 
-window.cargarPerfilesMatch = async function(nivel) {
-    console.log("🔍 cargarPerfilesMatch ejecutado con nivel:", nivel);
-    
-    const contenedor = document.getElementById('perfil-match');
-    if (!contenedor) {
-        console.error("❌ No se encontró el contenedor #perfil-match");
+    const user = auth.currentUser;
+    if (!user) {
+        alert('🔒 Debes iniciar sesión');
         return;
     }
-    console.log("✅ Contenedor encontrado");
 
+    const tagsInput = document.getElementById('mis-tags').value.trim();
+    misTags = tagsInput
+        ? tagsInput.split(',').map(t => t.trim().toLowerCase()).filter(t => t.length > 0)
+        : [];
+
+    const miNivel = document.getElementById('mi-nivel-select').value;
+    const miNombre = document.getElementById('usuario-nombre').textContent;
+
+    try {
+        // Datos privados, ligados a la cuenta autenticada
+        await setDoc(doc(db, "usuarios", user.uid), {
+            nivel: miNivel,
+            tags: misTags
+        }, { merge: true });
+
+        // Perfil público — para que OTROS usuarios puedan encontrarlo y filtrarlo por nivel.
+        // Usa el mismo uid como ID de documento, así es fácil excluirse a sí mismo del swipe.
+        await setDoc(doc(db, "perfiles", user.uid), {
+            nombre: miNombre,
+            nivel: miNivel,
+            tags: misTags
+        }, { merge: true });
+
+        console.log(`✅ Perfil guardado — nivel: ${miNivel}, tags:`, misTags);
+        mostrarMensaje('perfil-mensaje', '✅ Perfil guardado correctamente', 'exito');
+    } catch (error) {
+        console.error('❌ Error al guardar perfil:', error);
+        mostrarMensaje('perfil-mensaje', '❌ No se pudo guardar tu perfil: ' + error.message, 'error');
+    }
+};
+
+// ============================================
+// EXPLORAR PERFILES POR NIVEL — filtro directo,
+// no complementariedad. La compatibilidad (por
+// tags) se muestra igual, sin importar qué nivel
+// se esté explorando.
+// ============================================
+
+window.verPerfilesPorNivel = async function(nivel) {
+    console.log("🔍 verPerfilesPorNivel ejecutado con nivel:", nivel);
+
+    const user = auth.currentUser;
+    if (!user) {
+        alert('🔒 Debes iniciar sesión');
+        return;
+    }
+
+    document.getElementById('seccion-principal').classList.add('hidden');
+    document.getElementById('seccion-match').classList.remove('hidden');
+
+    const nombre = document.getElementById('usuario-nombre').textContent;
+    const email = document.getElementById('usuario-email').textContent;
+
+    document.getElementById('usuario-nombre-match').textContent = nombre || 'Sin nombre';
+    document.getElementById('usuario-email-match').textContent = email || 'Sin correo';
+
+    // Filtro directo: mismo nivel que se clickeó, no el complementario
+    await window.cargarPerfilesPorNivelDirecto(nivel);
+};
+
+window.cargarPerfilesPorNivelDirecto = async function(nivel) {
+    console.log("🔍 cargarPerfilesPorNivelDirecto ejecutado con nivel:", nivel);
+
+    const contenedor = document.getElementById('perfil-match');
     const user = auth.currentUser;
     if (!user) {
         contenedor.innerHTML = '<p>🔒 Debes iniciar sesión</p>';
@@ -502,97 +553,28 @@ window.cargarPerfilesMatch = async function(nivel) {
     contenedor.innerHTML = '<p>⏳ Buscando perfiles...</p>';
 
     try {
-        const nivelBuscado = obtenerNivelComplementario(nivel);
-        console.log("🎯 Nivel buscado (complementario):", nivelBuscado);
-        
-        if (!nivelBuscado) {
-            contenedor.innerHTML = '<p>❌ Nivel no reconocido</p>';
-            return;
-        }
-
         const q = query(
             collection(db, "perfiles"),
-            where("nivel", "==", nivelBuscado)
+            where("nivel", "==", nivel)
         );
         const snapshot = await getDocs(q);
         console.log("📊 Documentos encontrados:", snapshot.size);
-        
+
         perfilesDisponibles = snapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() }))
             .filter(perfil => perfil.id !== user.uid);
         indiceActual = 0;
 
         if (perfilesDisponibles.length === 0) {
-            contenedor.innerHTML = `<p>📭 No hay perfiles de nivel "${nivelBuscado}" disponibles</p>`;
+            contenedor.innerHTML = `<p>📭 No hay perfiles de nivel "${nivel}" disponibles</p>`;
             return;
         }
 
-        console.log("✅ Perfiles disponibles:", perfilesDisponibles.length);
         mostrarPerfilActual();
     } catch (error) {
         console.error('❌ Error al cargar perfiles:', error);
         contenedor.innerHTML = `<p style="color:red;">❌ Error: ${error.message}</p>`;
     }
-};
-
-// ============================================
-// SELECCIONAR NIVEL (ACTUALIZADA CON DEPURACIÓN)
-// ============================================
-
-window.seleccionarNivel = async function(nivel) {
-    console.log("🔍 seleccionarNivel ejecutado con nivel:", nivel);
-    
-    const user = auth.currentUser;
-    if (!user) {
-        alert('🔒 Debes iniciar sesión');
-        return;
-    }
-
-    console.log("✅ Usuario autenticado:", user.uid);
-
-    const tagsInput = document.getElementById('mis-tags').value.trim();
-    misTags = tagsInput
-        ? tagsInput.split(',').map(t => t.trim().toLowerCase()).filter(t => t.length > 0)
-        : [];
-
-    const miNombre = document.getElementById('usuario-nombre').textContent;
-
-    try {
-        // Datos privados, ligados a la cuenta autenticada
-        await setDoc(doc(db, "usuarios", user.uid), {
-            nivel: nivel,
-            tags: misTags
-        }, { merge: true });
-
-        // Perfil público — para que OTROS usuarios puedan encontrarlo y hacer match.
-        // Usa el mismo uid como ID de documento, así es fácil excluirse a sí mismo del swipe.
-        await setDoc(doc(db, "perfiles", user.uid), {
-            nombre: miNombre,
-            nivel: nivel,
-            tags: misTags
-        }, { merge: true });
-
-        console.log(`✅ Nivel, tags y perfil público guardados: ${nivel}`, misTags);
-    } catch (error) {
-        console.error('❌ Error al guardar nivel:', error);
-        alert('❌ No se pudo guardar tu nivel: ' + error.message);
-        return;
-    }
-
-    console.log("🔄 Ocultando sección principal, mostrando match");
-    document.getElementById('seccion-principal').classList.add('hidden');
-    document.getElementById('seccion-match').classList.remove('hidden');
-
-    const nombre = document.getElementById('usuario-nombre').textContent;
-    const email = document.getElementById('usuario-email').textContent;
-    
-    console.log("📋 Datos para match:", { nombre, email });
-    
-    document.getElementById('usuario-nombre-match').textContent = nombre || 'Sin nombre';
-    document.getElementById('usuario-email-match').textContent = email || 'Sin correo';
-
-    console.log("⏳ Cargando perfiles match para nivel:", nivel);
-    window.cargarPerfilesMatch(nivel);
 };
 
 // ============================================
@@ -610,6 +592,15 @@ onAuthStateChanged(auth, async (user) => {
                 console.log("📋 Datos del usuario:", userData);
                 mostrarUsuarioAutenticado(userData);
                 mostrarSeccionPrincipal();
+
+                // Precargar perfil ya guardado, si existe
+                if (userData.tags) {
+                    misTags = userData.tags;
+                    document.getElementById('mis-tags').value = userData.tags.join(', ');
+                }
+                if (userData.nivel) {
+                    document.getElementById('mi-nivel-select').value = userData.nivel;
+                }
 
                 setTimeout(() => {
                     window.cargarPerfiles();
