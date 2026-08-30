@@ -28,12 +28,12 @@ import {
 // ============================================
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAnfbt24mnC1cR_sMl2FSsnNXaMbLc2PO0",
-  authDomain: "birdmatch-lima.firebaseapp.com",
-  projectId: "birdmatch-lima",
-  storageBucket: "birdmatch-lima.firebasestorage.app",
-  messagingSenderId: "166632281489",
-  appId: "1:166632281489:web:03ec3d3c4b92413aa17630"
+    apiKey: "AIzaSy...", // ← TU API KEY
+    authDomain: "tu-proyecto.firebaseapp.com",
+    projectId: "tu-proyecto",
+    storageBucket: "tu-proyecto.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abcdef"
 };
 
 // ============================================
@@ -45,6 +45,27 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 console.log("✅ Firebase inicializado correctamente");
+
+// ============================================
+// VARIABLES PARA EL SISTEMA DE MATCH
+// ============================================
+
+let perfilesDisponibles = [];
+let indiceActual = 0;
+
+// ============================================
+// ALGORITMO DE COMPLEMENTARIEDAD
+// ============================================
+
+const complemento = {
+    "inicio": "experto",
+    "aficionado": "aficionado",
+    "experto": "inicio"
+};
+
+function obtenerNivelComplementario(miNivel) {
+    return complemento[miNivel] || null;
+}
 
 // ============================================
 // FUNCIONES DE AUTENTICACIÓN
@@ -60,7 +81,7 @@ async function registrarUsuario(email, password, nombre, rol) {
             email: email,
             rol: rol,
             activo: true,
-            creadoEn: new Date().toISOString()
+            creado: new Date().toISOString()
         });
 
         console.log("✅ Usuario registrado:", user.uid);
@@ -117,27 +138,36 @@ function mostrarSeccionPrincipal() {
     const registro = document.getElementById('seccion-registro');
     const login = document.getElementById('seccion-login');
     const principal = document.getElementById('seccion-principal');
+    const match = document.getElementById('seccion-match');
+    
     if (registro) registro.classList.add('hidden');
     if (login) login.classList.add('hidden');
     if (principal) principal.classList.remove('hidden');
+    if (match) match.classList.add('hidden');
 }
 
 window.mostrarLogin = function() {
     const registro = document.getElementById('seccion-registro');
     const login = document.getElementById('seccion-login');
     const principal = document.getElementById('seccion-principal');
+    const match = document.getElementById('seccion-match');
+    
     if (registro) registro.classList.add('hidden');
     if (login) login.classList.remove('hidden');
     if (principal) principal.classList.add('hidden');
+    if (match) match.classList.add('hidden');
 };
 
 window.mostrarRegistro = function() {
     const registro = document.getElementById('seccion-registro');
     const login = document.getElementById('seccion-login');
     const principal = document.getElementById('seccion-principal');
+    const match = document.getElementById('seccion-match');
+    
     if (registro) registro.classList.remove('hidden');
     if (login) login.classList.add('hidden');
     if (principal) principal.classList.add('hidden');
+    if (match) match.classList.add('hidden');
 };
 
 function mostrarUsuarioAutenticado(userData) {
@@ -160,16 +190,8 @@ window.handleRegistro = async function() {
     const password = document.getElementById('registro-password').value;
     const rol = document.getElementById('registro-rol').value;
 
-    if (!nombre) {
-        mostrarMensaje('registro-mensaje', 'Por favor, ingresa tu nombre completo', 'error');
-        return;
-    }
-    if (!email) {
-        mostrarMensaje('registro-mensaje', 'Por favor, ingresa tu correo electrónico', 'error');
-        return;
-    }
-    if (!password || password.length < 6) {
-        mostrarMensaje('registro-mensaje', 'La contraseña debe tener al menos 6 caracteres', 'error');
+    if (!nombre || !email || !password || password.length < 6) {
+        mostrarMensaje('registro-mensaje', 'Completa todos los campos (contraseña mínimo 6 caracteres)', 'error');
         return;
     }
 
@@ -199,12 +221,8 @@ window.handleLogin = async function() {
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
 
-    if (!email) {
-        mostrarMensaje('login-mensaje', 'Por favor, ingresa tu correo electrónico', 'error');
-        return;
-    }
-    if (!password) {
-        mostrarMensaje('login-mensaje', 'Por favor, ingresa tu contraseña', 'error');
+    if (!email || !password) {
+        mostrarMensaje('login-mensaje', 'Completa todos los campos', 'error');
         return;
     }
 
@@ -244,7 +262,7 @@ window.handleCerrarSesion = async function() {
 };
 
 // ============================================
-// CARGAR PERFILES DESDE FIRESTORE
+// CARGAR PERFILES (LISTA)
 // ============================================
 
 window.cargarPerfiles = async function() {
@@ -257,20 +275,19 @@ window.cargarPerfiles = async function() {
         return;
     }
 
-    contenedor.innerHTML = '<p>⏳ Cargando perfiles...</p>';
+    contenedor.innerHTML = '<p class="cargando">⏳ Cargando perfiles...</p>';
 
     try {
         let perfiles = [];
         let snapshot;
 
-        // Intentar cargar desde perfiles_publicos
         try {
-            snapshot = await getDocs(collection(db, "perfiles_publicos"));
-            perfiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        } catch (error) {
-            console.log("⚠️ No se encontró 'perfiles_publicos', intentando con 'perfiles'");
             snapshot = await getDocs(collection(db, "perfiles"));
             perfiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.log("⚠️ Error al cargar perfiles:", error);
+            contenedor.innerHTML = `<p style="color:red;">❌ Error: ${error.message}</p>`;
+            return;
         }
 
         contenedor.innerHTML = '';
@@ -309,6 +326,238 @@ window.cargarPerfiles = async function() {
 };
 
 // ============================================
+// MOSTRAR PERFIL ACTUAL (MATCH)
+// ============================================
+
+function mostrarPerfilActual() {
+    const contenedor = document.getElementById('perfil-match');
+    if (!contenedor) {
+        console.error("❌ Contenedor 'perfil-match' no encontrado");
+        return;
+    }
+
+    console.log("🔍 mostrarPerfilActual ejecutado");
+    console.log("📊 perfilesDisponibles:", perfilesDisponibles);
+    console.log("📊 indiceActual:", indiceActual);
+
+    if (perfilesDisponibles.length === 0) {
+        contenedor.innerHTML = '<p>📭 No hay más perfiles disponibles</p>';
+        return;
+    }
+
+    const perfil = perfilesDisponibles[indiceActual];
+    if (!perfil) {
+        contenedor.innerHTML = '<p>✅ ¡Ya revisaste todos los perfiles!</p>';
+        return;
+    }
+
+    console.log("📋 Perfil actual:", perfil);
+
+    const emojiNivel = {
+        'inicio': '😊',
+        'aficionado': '🐦',
+        'experto': '✈'
+    }[perfil.nivel] || '🐦';
+
+    const compatibilidad = Math.floor(Math.random() * 30) + 65;
+
+    contenedor.innerHTML = `
+        <div class="perfil-match-card">
+            <div class="perfil-match-header">
+                <span class="perfil-match-emoji">${emojiNivel}</span>
+                <h2>${perfil.nombre || 'Sin nombre'}, ${perfil.edad || '?'}</h2>
+                <span class="perfil-match-nivel">${perfil.nivel || 'Sin nivel'}</span>
+            </div>
+            
+            <div class="perfil-match-bio">
+                "${perfil.bio || 'Sin descripción'}"
+            </div>
+            
+            <div class="perfil-match-tags">
+                ${(perfil.tags || []).map(tag => `<span>#${tag}</span>`).join('')}
+            </div>
+            
+            <div class="perfil-match-compatibilidad">
+                🤝 ${compatibilidad}% COMPATIBILIDAD
+            </div>
+            
+            <div class="perfil-match-acciones">
+                <button class="btn-match btn-no" onclick="rechazarPerfil()">
+                    ✖️ No
+                </button>
+                <button class="btn-match btn-si" onclick="gustarPerfil('${perfil.id}')">
+                    ❤️ Sí
+                </button>
+            </div>
+            
+            <div style="font-size: 12px; color: #999; text-align: center; margin-top: 10px;">
+                Perfil ${indiceActual + 1} de ${perfilesDisponibles.length}
+            </div>
+        </div>
+    `;
+    
+    console.log("✅ Tarjeta renderizada correctamente");
+}
+
+function siguientePerfil() {
+    indiceActual++;
+    if (indiceActual >= perfilesDisponibles.length) {
+        document.getElementById('perfil-match').innerHTML = '<p>✅ ¡Ya revisaste todos los perfiles!</p>';
+        return;
+    }
+    mostrarPerfilActual();
+}
+
+// ============================================
+// DAR "ME GUSTA" A UN PERFIL
+// ============================================
+
+window.gustarPerfil = async function(perfilId) {
+    const user = auth.currentUser;
+    if (!user) {
+        alert('🔒 Debes iniciar sesión');
+        return;
+    }
+
+    try {
+        await addDoc(collection(db, "Likes"), {
+            de: user.uid,
+            a: perfilId,
+            timestamp: new Date().toISOString()
+        });
+
+        console.log(`❤️ Like dado al perfil: ${perfilId}`);
+
+        const q = query(
+            collection(db, "Likes"),
+            where("de", "==", perfilId),
+            where("a", "==", user.uid)
+        );
+        const snapshot = await getDocs(q);
+
+        if (!snapshot.empty) {
+            alert('🎉 ¡ES MATCH! Ambos se gustan. 🎉');
+        }
+
+        siguientePerfil();
+    } catch (error) {
+        console.error('❌ Error al dar like:', error);
+        alert('❌ Error: ' + error.message);
+    }
+};
+
+window.rechazarPerfil = function() {
+    console.log(`✖️ Perfil rechazado`);
+    siguientePerfil();
+};
+
+// ============================================
+// MOSTRAR LISTA DE PERFILES (VOLVER)
+// ============================================
+
+window.mostrarListaPerfiles = function() {
+    document.getElementById('seccion-match').classList.add('hidden');
+    document.getElementById('seccion-principal').classList.remove('hidden');
+    window.cargarPerfiles();
+};
+
+// ============================================
+// CARGAR PERFILES PARA MATCH
+// ============================================
+
+window.cargarPerfilesMatch = async function(nivel) {
+    console.log("🔍 cargarPerfilesMatch ejecutado con nivel:", nivel);
+    
+    const contenedor = document.getElementById('perfil-match');
+    if (!contenedor) {
+        console.error("❌ No se encontró el contenedor #perfil-match");
+        return;
+    }
+    console.log("✅ Contenedor encontrado");
+
+    const user = auth.currentUser;
+    if (!user) {
+        contenedor.innerHTML = '<p>🔒 Debes iniciar sesión</p>';
+        return;
+    }
+
+    contenedor.innerHTML = '<p>⏳ Buscando perfiles...</p>';
+
+    try {
+        const nivelBuscado = obtenerNivelComplementario(nivel);
+        console.log("🎯 Nivel buscado (complementario):", nivelBuscado);
+        
+        if (!nivelBuscado) {
+            contenedor.innerHTML = '<p>❌ Nivel no reconocido</p>';
+            return;
+        }
+
+        const q = query(
+            collection(db, "perfiles"),
+            where("nivel", "==", nivelBuscado)
+        );
+        const snapshot = await getDocs(q);
+        console.log("📊 Documentos encontrados:", snapshot.size);
+        
+        perfilesDisponibles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        indiceActual = 0;
+
+        if (perfilesDisponibles.length === 0) {
+            contenedor.innerHTML = `<p>📭 No hay perfiles de nivel "${nivelBuscado}" disponibles</p>`;
+            return;
+        }
+
+        console.log("✅ Perfiles disponibles:", perfilesDisponibles.length);
+        mostrarPerfilActual();
+    } catch (error) {
+        console.error('❌ Error al cargar perfiles:', error);
+        contenedor.innerHTML = `<p style="color:red;">❌ Error: ${error.message}</p>`;
+    }
+};
+
+// ============================================
+// SELECCIONAR NIVEL (ACTUALIZADA CON DEPURACIÓN)
+// ============================================
+
+window.seleccionarNivel = function(nivel) {
+    console.log("🔍 seleccionarNivel ejecutado con nivel:", nivel);
+    
+    const user = auth.currentUser;
+    if (!user) {
+        alert('🔒 Debes iniciar sesión');
+        return;
+    }
+
+    console.log("✅ Usuario autenticado:", user.uid);
+
+    try {
+        setDoc(doc(db, "usuarios", user.uid), {
+            nivel: nivel
+        }, { merge: true });
+        console.log(`✅ Nivel seleccionado y guardado: ${nivel}`);
+    } catch (error) {
+        console.error('❌ Error al guardar nivel:', error);
+    }
+
+    console.log("🔄 Ocultando sección principal, mostrando match");
+    document.getElementById('seccion-principal').classList.add('hidden');
+    document.getElementById('seccion-match').classList.remove('hidden');
+
+    const nombre = document.getElementById('usuario-nombre').textContent;
+    const email = document.getElementById('usuario-email').textContent;
+    const rol = document.getElementById('usuario-rol').textContent;
+    
+    console.log("📋 Datos para match:", { nombre, email, rol });
+    
+    document.getElementById('usuario-nombre-match').textContent = nombre || 'Sin nombre';
+    document.getElementById('usuario-email-match').textContent = email || 'Sin correo';
+    document.getElementById('usuario-rol-match').textContent = rol || 'Sin rol';
+
+    console.log("⏳ Cargando perfiles match para nivel:", nivel);
+    window.cargarPerfilesMatch(nivel);
+};
+
+// ============================================
 // ESCUCHAR CAMBIOS EN AUTENTICACIÓN
 // ============================================
 
@@ -329,7 +578,6 @@ onAuthStateChanged(auth, async (user) => {
                 }, 500);
             } else {
                 console.log("⚠️ El usuario no tiene datos en Firestore");
-                mostrarMensaje('login-mensaje', '⚠️ Usuario sin datos en Firestore', 'error');
                 window.mostrarLogin();
             }
         } catch (error) {
