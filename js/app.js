@@ -28,12 +28,12 @@ import {
 // ============================================
 
 const firebaseConfig = {
-    apiKey: "AIzaSy...", // ← TU API KEY
-    authDomain: "tu-proyecto.firebaseapp.com",
-    projectId: "tu-proyecto",
-    storageBucket: "tu-proyecto.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef"
+  apiKey: "AIzaSyAnfbt24mnC1cR_sMl2FSsnNXaMbLc2PO0",
+  authDomain: "birdmatch-lima.firebaseapp.com",
+  projectId: "birdmatch-lima",
+  storageBucket: "birdmatch-lima.firebasestorage.app",
+  messagingSenderId: "166632281489",
+  appId: "1:166632281489:web:03ec3d3c4b92413aa17630"
 };
 
 // ============================================
