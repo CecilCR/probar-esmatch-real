@@ -1,234 +1,216 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BirdMatch Lima</title>
-<style>
-  :root{
-    --dark-green:#1B4332; --green:#2D6A4F; --light-green:#40916C;
-    --cream:#F5F3EE; --amber:#D97706; --red:#DC2626; --blue:#2563EB;
-    --border:#D1D5DB; --radius-lg:16px;
-  }
-  *{box-sizing:border-box;}
-  body{font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif; background:var(--cream); margin:0; color:#1F2937;}
-  .topbar{background:#1E3A5F; color:white; padding:16px 24px;}
-  .topbar h1{margin:0; font-size:1.15rem;}
-  .topbar p{margin:4px 0 0; font-size:.82rem; opacity:.85;}
-  .container{max-width:520px; margin:24px auto; padding:0 16px;}
-  .card{background:white; border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px; margin-bottom:16px;}
-  .card h2{margin:0 0 4px; font-size:1rem; color:#1B4332;}
-  .step-desc{font-size:.83rem; color:#6B7280; margin:0 0 12px;}
-  textarea, input[type=text]{width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:.85rem; font-family:monospace;}
-  textarea{min-height:100px; resize:vertical;}
-  button{background:var(--blue); color:white; border:none; padding:10px 18px; border-radius:8px; font-weight:600; font-size:.88rem; cursor:pointer; margin-top:10px;}
-  button:hover{opacity:.9;}
-  button:disabled{background:#9CA3AF; cursor:not-allowed;}
-  .alert{border-radius:10px; padding:10px 14px; font-size:.84rem; border:1px solid; margin-bottom:14px;}
-  .alert-blue{background:#EFF6FF; border-color:var(--blue); color:#1E40AF;}
-  .alert-amber{background:#FFFBEB; border-color:var(--amber); color:#92400E;}
-  .result{margin-top:10px; padding:10px 14px; border-radius:8px; font-size:.85rem; font-weight:600; display:none;}
-  .result.ok{background:#F0FDF4; color:#166534; border:1px solid #BBF7D0; display:block;}
-  .result.fail{background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; display:block;}
-  .perfil-btn{
-    display:block; width:100%; text-align:left; background:white; border:1px solid var(--border);
-    border-radius:10px; padding:10px 14px; margin-bottom:8px; cursor:pointer; font-size:.9rem;
-    color:#1F2937;
-  }
-  .perfil-btn:hover{border-color:var(--green); background:#F0FDF4; color:#1B4332;}
-
-  /* swipe card */
-  .app-header{background:var(--dark-green); color:white; border-radius:16px 16px 0 0; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; font-weight:700;}
-  .swipe-card{background:white; border-radius:0 0 16px 16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,.08);}
-  .bird-photo{background:linear-gradient(160deg, var(--green), var(--dark-green)); height:180px; display:flex; align-items:center; justify-content:center; font-size:4.5rem; position:relative;}
-  .level-badge{position:absolute; bottom:10px; right:10px; background:rgba(255,255,255,.92); padding:4px 12px; border-radius:999px; font-size:.75rem; font-weight:700; color:#1B4332;}
-  .card-body{padding:16px;}
-  .card-body h2{margin:0 0 6px; font-size:1.2rem;}
-  .tags{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;}
-  .tag{background:#E8F5E9; color:var(--dark-green); padding:3px 10px; border-radius:999px; font-size:.72rem; font-weight:600;}
-  .actions{display:flex; justify-content:space-around; padding:14px; background:white; border-radius:0 0 16px 16px;}
-  .action-btn{width:48px; height:48px; border-radius:50%; border:1px solid var(--border); background:white; font-size:1.1rem; cursor:pointer;}
-  .action-btn:hover{background:#F3F4F6;}
-  .action-btn.like{color:var(--red); border-color:var(--red);}
-  .log{font-family:monospace; font-size:.76rem; background:#111827; color:#D1D5DB; padding:10px; border-radius:8px; max-height:180px; overflow-y:auto; margin-top:10px; white-space:pre-wrap;}
-  .match-banner{background:#FEF3C7; border:1px solid #FDE68A; color:#92400E; padding:12px 14px; border-radius:10px; font-weight:700; text-align:center; margin-bottom:14px; display:none;}
-  code{background:#F3F4F6; padding:1px 5px; border-radius:4px;}
-  .empty{color:#9CA3AF; font-style:italic; font-size:.85rem;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BirdMatch Lima</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 { color: #FF6D00; margin-bottom: 20px; text-align: center; }
+        .hidden { display: none !important; }
+        
+        /* Estilos de autenticación */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .btn {
+            background: #FF6D00;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn:hover { background: #e65100; }
+        .btn-danger { background: #f44336; }
+        .btn-danger:hover { background: #d32f2f; }
+        .toggle-link {
+            color: #FF6D00;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .mensaje {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .mensaje-exito { background: #e8f5e9; color: #2e7d32; }
+        .mensaje-error { background: #ffebee; color: #c62828; }
+        
+        /* Estilos de tarjetas de perfil */
+        .perfil-card {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #FF6D00;
+        }
+        .perfil-card h3 { color: #FF6D00; }
+        .perfil-card .nivel {
+            display: inline-block;
+            background: #e3f2fd;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        .perfil-card .tags {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .perfil-card .tags span {
+            background: #e0e0e0;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .perfil-card .bio {
+            color: #666;
+            margin: 10px 0;
+        }
+        .info-usuario {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
 
-<div class="topbar">
-  <h1>🐦 BirdMatch Lima</h1>
-  <p>Encuentra a tu complemento en la observación de aves</p>
-</div>
+        <!-- ============================================ -->
+        <!-- SECCIÓN DE REGISTRO -->
+        <!-- ============================================ -->
+        <div id="seccion-registro">
+            <h1>🐦 BirdMatch Lima</h1>
+            <h2 style="text-align: center; font-size: 18px; color: #666;">Crear cuenta</h2>
 
-<div class="container">
+            <div class="form-group">
+                <label>Nombre completo</label>
+                <input type="text" id="registro-nombre" placeholder="Ana García">
+            </div>
 
-  <!-- PASO 2: QUIÉN ERES -->
-  <div class="card" id="pasoQuienEres">
-    <h2>¿Quién eres?</h2>
-    <p class="step-desc">Elige con qué perfil vas a navegar BirdMatch Lima.</p>
-    <div id="listaPerfiles"><p class="empty">Cargando perfiles...</p></div>
-  </div>
+            <div class="form-group">
+                <label>Correo electrónico</label>
+                <input type="email" id="registro-email" placeholder="ana@email.com">
+            </div>
 
-  <!-- PASO 3: SWIPE -->
-  <div id="pasoSwipe" style="display:none;">
-    <div class="match-banner" id="matchBanner"></div>
-    <div class="app-header">
-      <span>🐦 Navegando como <span id="miNombreLabel"></span></span>
-      <span id="cardCount" style="font-weight:400; font-size:.78rem;"></span>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="registro-password" placeholder="Mínimo 6 caracteres">
+            </div>
+
+            <div class="form-group">
+                <label>Rol</label>
+                <select id="registro-rol">
+                    <option value="estudiante">Estudiante</option>
+                    <option value="profesor">Profesor</option>
+                    <option value="administrador">Administrador</option>
+                </select>
+            </div>
+
+            <button class="btn" onclick="handleRegistro()">Crear cuenta</button>
+
+            <div style="text-align: center; margin-top: 15px;">
+                <span>¿Ya tienes cuenta? </span>
+                <span class="toggle-link" onclick="mostrarLogin()">Inicia sesión</span>
+            </div>
+
+            <div id="registro-mensaje"></div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SECCIÓN DE INICIO DE SESIÓN -->
+        <!-- ============================================ -->
+        <div id="seccion-login" class="hidden">
+            <h1>🐦 BirdMatch Lima</h1>
+            <h2 style="text-align: center; font-size: 18px; color: #666;">Iniciar sesión</h2>
+
+            <div class="form-group">
+                <label>Correo electrónico</label>
+                <input type="email" id="login-email" placeholder="ana@email.com">
+            </div>
+
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="login-password" placeholder="Tu contraseña">
+            </div>
+
+            <button class="btn" onclick="handleLogin()">Iniciar sesión</button>
+
+            <div style="text-align: center; margin-top: 15px;">
+                <span>¿No tienes cuenta? </span>
+                <span class="toggle-link" onclick="mostrarRegistro()">Regístrate</span>
+            </div>
+
+            <div id="login-mensaje"></div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- SECCIÓN PRINCIPAL (protegida) -->
+        <!-- ============================================ -->
+        <div id="seccion-principal" class="hidden">
+            <h1>🐦 BirdMatch Lima</h1>
+            <p style="text-align: center; color: #666;">Encuentra compañeros para observar aves</p>
+
+            <div id="info-usuario" class="info-usuario">
+                <strong>👤 Usuario:</strong> <span id="usuario-nombre">Cargando...</span><br>
+                <strong>📧 Correo:</strong> <span id="usuario-email">Cargando...</span><br>
+                <strong>🎯 Rol:</strong> <span id="usuario-rol">Cargando...</span>
+            </div>
+
+            <button class="btn btn-danger" onclick="handleCerrarSesion()" style="margin-bottom: 15px;">Cerrar sesión</button>
+
+            <h3>¿Quién eres? Elige con qué perfil vas a navegar</h3>
+            <div id="lista-perfiles">
+                <p>Cargando perfiles...</p>
+            </div>
+
+            <button class="btn" onclick="cargarPerfiles()" style="margin-top: 10px;">🔄 Actualizar perfiles</button>
+        </div>
+
     </div>
-    <div class="swipe-card">
-      <div class="bird-photo">
-        🦜
-        <span class="level-badge" id="levelBadge"></span>
-      </div>
-      <div class="card-body">
-        <h2 id="perfilNombre"></h2>
-        <div class="tags" id="perfilTags"></div>
-      </div>
-      <div class="actions">
-        <button class="action-btn" onclick="reaccionar('pasar')">✕</button>
-        <button class="action-btn" onclick="reaccionar('estrella')">★</button>
-        <button class="action-btn like" onclick="reaccionar('like')">♥</button>
-      </div>
-    </div>
 
-    <div class="card" style="margin-top:16px;">
-      <h2>Registro de actividad</h2>
-      <div class="log" id="log">Esperando acciones...</div>
-    </div>
+    <!-- ============================================ -->
+    <!-- CARGAR FIREBASE SDK -->
+    <!-- ============================================ -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js"
+            }
+        }
+    </script>
 
-  </div>
-
-</div>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-  import {
-    getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-
-  // Configuración del proyecto birdmatch-lima — no es secreta (Capítulo 6/7)
-  const firebaseConfig = {
-    apiKey: "AIzaSyAnfbt24mnC1cR_sMl2FSsnNXaMbLc2PO0",
-    authDomain: "birdmatch-lima.firebaseapp.com",
-    projectId: "birdmatch-lima",
-    storageBucket: "birdmatch-lima.firebasestorage.app",
-    messagingSenderId: "166632281489",
-    appId: "1:166632281489:web:03ec3d3c4b92413aa17630"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  let mi = null; // { id, nombre, nivel }
-  let cola = [];
-  let idx = 0;
-  const complemento = { inicio:"experto", aficionado:"aficionado", experto:"inicio" };
-  const emojiPorNivel = { inicio:"🐣 Inicio", aficionado:"🦉 Aficionado", experto:"🦅 Experto" };
-
-  cargarPerfiles(); // arranca solo al cargar la página, sin pasos manuales
-
-  async function cargarPerfiles(){
-    document.getElementById('pasoQuienEres').style.display = 'block';
-    const listaEl = document.getElementById('listaPerfiles');
-    try {
-      const snap = await getDocs(collection(db, "perfiles_publicos"));
-      if (snap.empty) {
-        listaEl.innerHTML = '<p class="empty">No se encontraron documentos en perfiles_publicos. Revisa el Capítulo 10.</p>';
-        return;
-      }
-      listaEl.innerHTML = '';
-      snap.forEach(doc => {
-        const p = doc.data();
-        const btn = document.createElement('button');
-        btn.className = 'perfil-btn';
-        btn.textContent = `${p.nombre}, ${p.edad} — ${emojiPorNivel[p.nivel] || p.nivel}`;
-        btn.onclick = () => elegirPerfil(doc.id, p);
-        listaEl.appendChild(btn);
-      });
-    } catch(e) {
-      listaEl.innerHTML = `<p class="result fail" style="display:block;">❌ Error leyendo perfiles_publicos: ${e.message}</p>`;
-    }
-  }
-
-  async function elegirPerfil(id, datos){
-    mi = { id, nombre: datos.nombre, nivel: datos.nivel };
-    document.getElementById('pasoQuienEres').style.display = 'none';
-    document.getElementById('pasoSwipe').style.display = 'block';
-    document.getElementById('miNombreLabel').textContent = datos.nombre;
-    await cargarCola();
-  }
-
-  async function cargarCola(){
-    const nivelBuscado = complemento[mi.nivel];
-    const q = query(collection(db, "perfiles_publicos"), where("nivel","==",nivelBuscado));
-    const snap = await getDocs(q);
-    cola = [];
-    snap.forEach(doc => { if (doc.id !== mi.id) cola.push({ id: doc.id, ...doc.data() }); });
-    idx = 0;
-    log(`> Buscando complementarios de nivel "${mi.nivel}" → "${nivelBuscado}": ${cola.length} encontrados`);
-    renderCard();
-  }
-
-  function renderCard(){
-    document.getElementById('cardCount').textContent = cola.length ? `${Math.min(idx+1, cola.length)} / ${cola.length}` : '0 / 0';
-    if (idx >= cola.length){
-      document.getElementById('perfilNombre').textContent = 'No hay más perfiles complementarios';
-      document.getElementById('perfilTags').innerHTML = '';
-      document.getElementById('levelBadge').textContent = '';
-      return;
-    }
-    const p = cola[idx];
-    document.getElementById('perfilNombre').textContent = `${p.nombre}, ${p.edad}`;
-    document.getElementById('perfilTags').innerHTML = (p.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
-    document.getElementById('levelBadge').textContent = emojiPorNivel[p.nivel] || p.nivel;
-  }
-
-  window.reaccionar = async function(tipo){
-    if (idx >= cola.length) return;
-    const p = cola[idx];
-
-    if (tipo === 'pasar'){ log(`> ✕ Pasaste a ${p.nombre}`); idx++; renderCard(); return; }
-    if (tipo === 'estrella'){ log(`> ★ Marcaste a ${p.nombre} como favorito (no se guarda en esta demo)`); idx++; renderCard(); return; }
-
-    // LIKE — esto sí escribe en Firestore de verdad
-    log(`> ♥ Enviando like: de="${mi.id}" a="${p.id}"...`);
-    try {
-      await addDoc(collection(db, "Likes"), { de: mi.id, a: p.id, timestamp: serverTimestamp() });
-      log(`> ✅ Like guardado en la colección "Likes"`);
-
-      // Verificar match mutuo: ¿existe un like de p.id hacia mi.id?
-      const q = query(collection(db, "Likes"), where("de","==", p.id), where("a","==", mi.id));
-      const snap = await getDocs(q);
-      if (!snap.empty){
-        log(`> 🎉 esMatch(${mi.nombre}, ${p.nombre}) → true`);
-        mostrarMatch(p.nombre);
-      } else {
-        log(`> esMatch(${mi.nombre}, ${p.nombre}) → false (aún no es mutuo)`);
-      }
-    } catch(e){
-      log(`> ❌ Error al guardar like: ${e.message}`);
-    }
-    idx++;
-    renderCard();
-  };
-
-  function mostrarMatch(nombreOtro){
-    const banner = document.getElementById('matchBanner');
-    banner.textContent = `🎉 ¡MATCH con ${nombreOtro}!`;
-    banner.style.display = 'block';
-    setTimeout(()=> banner.style.display='none', 4000);
-  }
-
-  function log(texto){
-    const el = document.getElementById('log');
-    if (el.textContent === 'Esperando acciones...') el.textContent = '';
-    el.textContent += texto + '\n';
-    el.scrollTop = el.scrollHeight;
-  }
-</script>
-
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
