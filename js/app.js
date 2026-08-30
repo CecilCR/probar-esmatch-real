@@ -486,13 +486,24 @@ window.gustarPerfil = async function(perfilId) {
         );
         const snapshot = await getDocs(q);
 
+        let esMatch = false;
         if (!snapshot.empty) {
             const nombreOtro = perfilActual?.nombre || 'esa persona';
+            console.log(`🎉 ¡Es match con ${nombreOtro}! (like recíproco encontrado)`);
             mostrarBannerMatch(nombreOtro);
             await crearMatchSiNoExiste(user.uid, perfilId, miNombre, nombreOtro);
+            esMatch = true;
+        } else {
+            console.log(`ℹ️ Like guardado, pero aún no hay match (${perfilActual?.nombre || perfilId} no te ha dado like todavía)`);
         }
 
-        siguientePerfil();
+        // Si hubo match, esperamos a que el banner se vea (4s) antes de
+        // avanzar — si no, avanzamos de inmediato como siempre.
+        if (esMatch) {
+            setTimeout(siguientePerfil, 4000);
+        } else {
+            siguientePerfil();
+        }
     } catch (error) {
         console.error('❌ Error al dar like:', error);
         alert('❌ Error: ' + error.message);
