@@ -503,16 +503,30 @@
             <button class="btn btn-danger" onclick="handleCerrarSesion()">🚪 Cerrar sesión</button>
 
             <!-- SELECCIÓN DE NIVEL -->
+            <!-- MI PERFIL -->
             <div class="form-group" style="margin-top: 20px;">
                 <label>Tus intereses (separados por coma)</label>
                 <input type="text" id="mis-tags" placeholder="Ej. costa, fotografía, parques" />
             </div>
 
-            <h3 style="margin-top: 25px;">🌿 Elige tu nivel de experiencia</h3>
+            <div class="form-group">
+                <label>Tu nivel de experiencia</label>
+                <select id="mi-nivel-select">
+                    <option value="inicio">😊 Inicio</option>
+                    <option value="aficionado">🐦 Aficionado</option>
+                    <option value="experto">✈ Experto</option>
+                </select>
+            </div>
+
+            <button class="btn btn-success" onclick="guardarMiPerfil()">💾 Guardar mi perfil</button>
+            <div id="perfil-mensaje"></div>
+
+            <!-- EXPLORAR POR NIVEL -->
+            <h3 style="margin-top: 25px;">🔍 Explorar perfiles por nivel</h3>
             <div class="btn-group">
-                <button class="btn btn-secondary" onclick="seleccionarNivel('inicio')">😊 Inicio</button>
-                <button class="btn btn-secondary" onclick="seleccionarNivel('aficionado')">🐦 Aficionado</button>
-                <button class="btn btn-secondary" onclick="seleccionarNivel('experto')">✈ Experto</button>
+                <button class="btn btn-secondary" onclick="verPerfilesPorNivel('inicio')">😊 Inicio</button>
+                <button class="btn btn-secondary" onclick="verPerfilesPorNivel('aficionado')">🐦 Aficionado</button>
+                <button class="btn btn-secondary" onclick="verPerfilesPorNivel('experto')">✈ Experto</button>
             </div>
 
             <!-- LISTA DE PERFILES -->
