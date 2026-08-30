@@ -52,6 +52,7 @@ console.log("✅ Firebase inicializado correctamente");
 
 let perfilesDisponibles = [];
 let indiceActual = 0;
+let misTags = [];
 
 // ============================================
 // ALGORITMO DE COMPLEMENTARIEDAD
@@ -322,6 +323,26 @@ window.cargarPerfiles = async function() {
 };
 
 // ============================================
+// COMPATIBILIDAD REAL — basada en tags compartidos
+// ============================================
+
+function calcularCompatibilidad(misTags, tagsPerfil) {
+    const a = (misTags || []).map(t => t.toLowerCase().trim());
+    const b = (tagsPerfil || []).map(t => t.toLowerCase().trim());
+
+    if (a.length === 0 || b.length === 0) {
+        return { porcentaje: 0, compartidos: [] };
+    }
+
+    const compartidos = a.filter(tag => b.includes(tag));
+    // Similitud de Jaccard: intersección / unión
+    const union = new Set([...a, ...b]);
+    const porcentaje = Math.round((compartidos.length / union.size) * 100);
+
+    return { porcentaje, compartidos };
+}
+
+// ============================================
 // MOSTRAR PERFIL ACTUAL (MATCH)
 // ============================================
 
@@ -355,7 +376,7 @@ function mostrarPerfilActual() {
         'experto': '✈'
     }[perfil.nivel] || '🐦';
 
-    const compatibilidad = Math.floor(Math.random() * 30) + 65;
+    const { porcentaje: compatibilidad, compartidos } = calcularCompatibilidad(misTags, perfil.tags);
 
     contenedor.innerHTML = `
         <div class="perfil-match-card">
@@ -375,6 +396,7 @@ function mostrarPerfilActual() {
             
             <div class="perfil-match-compatibilidad">
                 🤝 ${compatibilidad}% COMPATIBILIDAD
+                ${compartidos.length > 0 ? `<br><small>En común: ${compartidos.map(t => '#' + t).join(', ')}</small>` : ''}
             </div>
             
             <div class="perfil-match-acciones">
@@ -495,7 +517,9 @@ window.cargarPerfilesMatch = async function(nivel) {
         const snapshot = await getDocs(q);
         console.log("📊 Documentos encontrados:", snapshot.size);
         
-        perfilesDisponibles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        perfilesDisponibles = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(perfil => perfil.id !== user.uid);
         indiceActual = 0;
 
         if (perfilesDisponibles.length === 0) {
@@ -526,11 +550,29 @@ window.seleccionarNivel = async function(nivel) {
 
     console.log("✅ Usuario autenticado:", user.uid);
 
+    const tagsInput = document.getElementById('mis-tags').value.trim();
+    misTags = tagsInput
+        ? tagsInput.split(',').map(t => t.trim().toLowerCase()).filter(t => t.length > 0)
+        : [];
+
+    const miNombre = document.getElementById('usuario-nombre').textContent;
+
     try {
+        // Datos privados, ligados a la cuenta autenticada
         await setDoc(doc(db, "usuarios", user.uid), {
-            nivel: nivel
+            nivel: nivel,
+            tags: misTags
         }, { merge: true });
-        console.log(`✅ Nivel seleccionado y guardado: ${nivel}`);
+
+        // Perfil público — para que OTROS usuarios puedan encontrarlo y hacer match.
+        // Usa el mismo uid como ID de documento, así es fácil excluirse a sí mismo del swipe.
+        await setDoc(doc(db, "perfiles", user.uid), {
+            nombre: miNombre,
+            nivel: nivel,
+            tags: misTags
+        }, { merge: true });
+
+        console.log(`✅ Nivel, tags y perfil público guardados: ${nivel}`, misTags);
     } catch (error) {
         console.error('❌ Error al guardar nivel:', error);
         alert('❌ No se pudo guardar tu nivel: ' + error.message);
