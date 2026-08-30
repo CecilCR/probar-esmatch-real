@@ -25,14 +25,14 @@ import {
 // CONFIGURACIÓN DE FIREBASE
 // ============================================
 
-const firebaseConfig = {
- " apiKey": "AIzaSyAnfbt24mnC1cR_sMl2FSsnNXaMbLc2PO0",
-  "authDomain": "birdmatch-lima.firebaseapp.com",
-  "projectId": "birdmatch-lima",
-  "storageBucket": "birdmatch-lima.firebasestorage.app",
-  "messagingSenderId": "166632281489",
- " appId": "1:166632281489:web:03ec3d3c4b92413aa17630"
-}
+const firebaseConfig ={
+  apiKey: "AIzaSyAnfbt24mnC1cR_sMl2FSsnNXaMbLc2PO0",
+  authDomain: "birdmatch-lima.firebaseapp.com",
+  projectId: "birdmatch-lima",
+  storageBucket: "birdmatch-lima.firebasestorage.app",
+  messagingSenderId: "166632281489",
+  appId: "1:166632281489:web:03ec3d3c4b92413aa17630"
+};
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
